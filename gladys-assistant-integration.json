@@ -1,0 +1,383 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "FreeKiosk",
+  "description": {
+    "en": "Discover your FreeKiosk tablets on the network and control them through their REST API.",
+    "fr": "Découvrez vos tablettes FreeKiosk sur le réseau et pilotez-les via leur API REST."
+  },
+  "version": "1.0.0",
+  "docker_image": "ghcr.io/quentinlegay/gladys-freekiosk:1.0.0",
+  "gladys_version": ">=5.1.0",
+  "cover_image": "https://raw.githubusercontent.com/quentinlegay/gladys-freekiosk/main/cover.png",
+  "categories": ["multimedia"],
+  "transports": ["local"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": { "en": "Before you start", "fr": "Avant de commencer" },
+      "description": {
+        "en": "On each tablet, open the FreeKiosk settings (5 taps on the secret button, then the PIN), go to Advanced > REST API, enable the REST API and \"Allow remote control\", and note the port (8080 by default) and the API key if you set one. Then scan your network or add the tablets by IP with the actions below, and create them from the Discovery tab.",
+        "fr": "Sur chaque tablette, ouvrez les réglages FreeKiosk (5 appuis sur le bouton secret, puis le code PIN), allez dans Avancé > API REST, activez l'API REST et « Autoriser le contrôle à distance », et notez le port (8080 par défaut) et la clé d'API si vous en avez défini une. Scannez ensuite votre réseau ou ajoutez les tablettes par IP avec les actions ci-dessous, puis créez-les depuis l'onglet Découverte."
+      },
+      "links": [
+        {
+          "url": "https://github.com/RushB-fr/freekiosk/blob/main/docs/rest-api.md",
+          "label": { "en": "FreeKiosk REST API", "fr": "API REST de FreeKiosk" }
+        },
+        {
+          "url": "https://freekiosk.app",
+          "label": { "en": "FreeKiosk website", "fr": "Site de FreeKiosk" }
+        }
+      ]
+    },
+    {
+      "key": "api_key",
+      "type": "secret",
+      "label": { "en": "API key", "fr": "Clé d'API" },
+      "description": {
+        "en": "The REST API key set in FreeKiosk, shared by your tablets. Leave empty if they have none. A tablet with another key can get its own with the \"Set a tablet's API key\" action.",
+        "fr": "La clé d'API REST définie dans FreeKiosk, commune à vos tablettes. Laissez vide si elles n'en ont pas. Une tablette avec une autre clé peut recevoir la sienne via l'action « Définir la clé d'API d'une tablette »."
+      },
+      "required": false
+    },
+    {
+      "key": "scan_range",
+      "type": "string",
+      "label": { "en": "Addresses to scan", "fr": "Adresses à scanner" },
+      "description": {
+        "en": "Where the scan looks for tablets: CIDR blocks (up to /22), ranges or single IPs, comma-separated. Empty: no scan, add the tablets by IP.",
+        "fr": "Où le scan cherche les tablettes : blocs CIDR (jusqu'à /22), plages ou IP seules, séparés par des virgules. Vide : pas de scan, ajoutez les tablettes par IP."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.0/24",
+        "fr": "ex. 192.168.1.0/24"
+      },
+      "required": false
+    },
+    {
+      "key": "default_port",
+      "type": "number",
+      "label": { "en": "REST API port", "fr": "Port de l'API REST" },
+      "description": {
+        "en": "Port scanned on each address, and default port of the tablets added by IP.",
+        "fr": "Port scanné sur chaque adresse, et port par défaut des tablettes ajoutées par IP."
+      },
+      "required": false,
+      "default": 8080,
+      "min": 1,
+      "max": 65535
+    },
+    {
+      "key": "poll_frequency",
+      "type": "number",
+      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "description": {
+        "en": "How often each tablet's status (screen, battery, brightness...) is read, in seconds (15 minimum).",
+        "fr": "Fréquence de lecture de l'état de chaque tablette (écran, batterie, luminosité...), en secondes (15 minimum)."
+      },
+      "required": false,
+      "default": 30,
+      "min": 15,
+      "max": 3600
+    },
+    {
+      "key": "camera",
+      "type": "select",
+      "label": { "en": "Tablet camera", "fr": "Caméra de la tablette" },
+      "description": {
+        "en": "Adds a camera to the tablets created afterwards, showing a photo taken on demand. Disabled by default for privacy.",
+        "fr": "Ajoute une caméra aux tablettes créées ensuite, affichant une photo prise à la demande. Désactivée par défaut, par respect de la vie privée."
+      },
+      "required": false,
+      "default": "disabled",
+      "options": [
+        { "value": "disabled", "label": { "en": "Disabled", "fr": "Désactivée" } },
+        { "value": "front", "label": { "en": "Front camera", "fr": "Caméra frontale" } },
+        { "value": "back", "label": { "en": "Back camera", "fr": "Caméra arrière" } }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "scan_now",
+      "label": { "en": "Scan the network", "fr": "Scanner le réseau" },
+      "description": {
+        "en": "Refreshes the known tablets and looks for new ones in the configured addresses.",
+        "fr": "Rafraîchit les tablettes connues et en cherche de nouvelles dans les adresses configurées."
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "key": "add_tablet",
+      "label": { "en": "Add a tablet by IP", "fr": "Ajouter une tablette par IP" },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "host",
+          "type": "string",
+          "label": { "en": "Tablet IP address", "fr": "Adresse IP de la tablette" },
+          "placeholder": { "en": "192.168.1.50", "fr": "192.168.1.50" },
+          "required": true
+        },
+        {
+          "key": "port",
+          "type": "number",
+          "label": {
+            "en": "REST API port (empty: the configured port)",
+            "fr": "Port de l'API REST (vide : le port configuré)"
+          }
+        },
+        {
+          "key": "api_key",
+          "type": "string",
+          "label": {
+            "en": "API key (empty: the configured key)",
+            "fr": "Clé d'API (vide : la clé configurée)"
+          }
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "label": { "en": "Name (optional)", "fr": "Nom (facultatif)" },
+          "placeholder": { "en": "Entrance tablet", "fr": "Tablette de l'entrée" }
+        }
+      ]
+    },
+    {
+      "key": "set_api_key",
+      "label": { "en": "Set a tablet's API key", "fr": "Définir la clé d'API d'une tablette" },
+      "description": {
+        "en": "For a tablet whose key differs from the configured one. Leave the key empty to go back to the configured key.",
+        "fr": "Pour une tablette dont la clé diffère de celle configurée. Laissez la clé vide pour revenir à la clé configurée."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        },
+        {
+          "key": "api_key",
+          "type": "string",
+          "label": { "en": "API key", "fr": "Clé d'API" }
+        }
+      ]
+    },
+    {
+      "key": "update_address",
+      "label": { "en": "Change a tablet's address", "fr": "Changer l'adresse d'une tablette" },
+      "description": {
+        "en": "The tablet got a new IP address: keeps the device, its history and its scenes.",
+        "fr": "La tablette a changé d'adresse IP : conserve l'appareil, son historique et ses scènes."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        },
+        {
+          "key": "host",
+          "type": "string",
+          "label": { "en": "New IP address", "fr": "Nouvelle adresse IP" },
+          "placeholder": { "en": "192.168.1.51", "fr": "192.168.1.51" },
+          "required": true
+        },
+        {
+          "key": "port",
+          "type": "number",
+          "label": {
+            "en": "REST API port (empty: unchanged)",
+            "fr": "Port de l'API REST (vide : inchangé)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "identify",
+      "label": { "en": "Identify a tablet", "fr": "Identifier une tablette" },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        }
+      ]
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "tablet_availability_changed",
+      "label": {
+        "en": "Tablet online / offline",
+        "fr": "Tablette en ligne / hors ligne"
+      },
+      "description": {
+        "en": "A FreeKiosk tablet stopped or started answering.",
+        "fr": "Une tablette FreeKiosk a cessé ou recommencé de répondre."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" }
+        },
+        {
+          "key": "status",
+          "type": "select",
+          "label": { "en": "Becomes", "fr": "Devient" },
+          "options": [
+            { "value": "online", "label": { "en": "Online", "fr": "En ligne" } },
+            { "value": "offline", "label": { "en": "Offline", "fr": "Hors ligne" } }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "status",
+          "type": "string",
+          "label": { "en": "New status", "fr": "Nouvel état" }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "load_url",
+      "label": { "en": "Open a URL on a tablet", "fr": "Ouvrir une URL sur une tablette" },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": { "en": "URL", "fr": "URL" },
+          "placeholder": { "en": "https://example.com", "fr": "https://exemple.fr" },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "speak",
+      "label": { "en": "Speak on a tablet", "fr": "Faire parler une tablette" },
+      "description": {
+        "en": "Reads a text aloud with the tablet's text-to-speech engine.",
+        "fr": "Lit un texte à voix haute avec la synthèse vocale de la tablette."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": { "en": "Text", "fr": "Texte" },
+          "required": true
+        },
+        {
+          "key": "language",
+          "type": "string",
+          "label": {
+            "en": "Language (optional, e.g. fr-FR)",
+            "fr": "Langue (facultatif, ex. fr-FR)"
+          },
+          "placeholder": { "en": "en-US", "fr": "fr-FR" }
+        }
+      ]
+    },
+    {
+      "key": "show_message",
+      "label": { "en": "Show a message on a tablet", "fr": "Afficher un message sur une tablette" },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": { "en": "Message", "fr": "Message" },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "play_audio",
+      "label": { "en": "Play a sound on a tablet", "fr": "Jouer un son sur une tablette" },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": { "en": "Audio file URL", "fr": "URL du fichier audio" },
+          "placeholder": {
+            "en": "https://example.com/sound.mp3",
+            "fr": "https://exemple.fr/son.mp3"
+          },
+          "required": true
+        },
+        {
+          "key": "volume",
+          "type": "number",
+          "label": { "en": "Volume (0-100, optional)", "fr": "Volume (0-100, facultatif)" },
+          "min": 0,
+          "max": 100
+        },
+        {
+          "key": "loop",
+          "type": "boolean",
+          "label": { "en": "Loop", "fr": "En boucle" },
+          "default": false
+        }
+      ]
+    },
+    {
+      "key": "stop_audio",
+      "label": { "en": "Stop the sound of a tablet", "fr": "Arrêter le son d'une tablette" },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        }
+      ]
+    }
+  ]
+}
