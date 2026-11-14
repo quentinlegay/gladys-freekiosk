@@ -91,6 +91,18 @@ qui refuse la clé d'API par un point orange.
 - Les fonctionnalités de l'appareil (écran, luminosité...) se pilotent aussi
   avec l'action standard « Contrôler un appareil ».
 
+### Widgets du tableau de bord
+
+- **Tablette FreeKiosk** : choisissez une tablette dans les réglages du widget.
+  Il affiche en direct sa batterie, sa luminosité et son volume, son état
+  (connexion, écran, page affichée, alimentation) et quatre boutons : allumer /
+  éteindre l'écran, recharger la page, ouvrir une URL et faire parler la
+  tablette (un petit formulaire s'ouvre). Les boutons sont masqués quand la
+  tablette est injoignable.
+- **Tablettes FreeKiosk** : toutes vos tablettes (10 au plus) avec leur
+  connexion et leur batterie, le nombre de tablettes en ligne, et un bouton
+  **Scanner le réseau**.
+
 ## 5. Actions de la page Configuration
 
 | Action                              | Usage                                                                                      |

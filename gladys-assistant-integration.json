@@ -379,5 +379,36 @@
         }
       ]
     }
+  ],
+  "widgets": [
+    {
+      "key": "tablet",
+      "label": { "en": "FreeKiosk tablet", "fr": "Tablette FreeKiosk" },
+      "description": {
+        "en": "Battery, brightness, volume, screen and page of one tablet, with quick controls.",
+        "fr": "Batterie, luminosité, volume, écran et page d'une tablette, avec des commandes rapides."
+      },
+      "icon": "tablet",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        }
+      ],
+      "action_timeout_seconds": 20
+    },
+    {
+      "key": "tablets_overview",
+      "label": { "en": "FreeKiosk tablets", "fr": "Tablettes FreeKiosk" },
+      "description": {
+        "en": "Every tablet with its connection and battery, and a network scan button.",
+        "fr": "Toutes les tablettes avec leur connexion et leur batterie, et un bouton de scan."
+      },
+      "icon": "grid",
+      "action_timeout_seconds": 60
+    }
   ]
 }

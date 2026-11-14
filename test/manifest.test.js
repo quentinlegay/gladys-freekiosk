@@ -12,6 +12,7 @@ import { DEFAULT_CONFIG } from '../src/config.js';
 import { SCENE_TRIGGER_AVAILABILITY } from '../src/constants.js';
 import { MANIFEST_ACTIONS, SCENE_ACTIONS } from '../src/scenes.js';
 import { registerHandlers } from '../src/app.js';
+import { WIDGETS } from '../src/widgets.js';
 import { createFakeClient } from './helpers/fakeTablets.js';
 
 const manifest = JSON.parse(
@@ -21,6 +22,7 @@ const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url
 
 const allFields = [
   ...(manifest.config_schema ?? []),
+  ...(manifest.widgets ?? []).flatMap((widget) => widget.settings ?? []),
   ...[
     ...(manifest.actions ?? []),
     ...(manifest.scene_triggers ?? []),
@@ -62,6 +64,17 @@ test('every scene_actions key has a handler, and vice versa', () => {
   }
   for (const key of Object.keys(SCENE_ACTIONS)) {
     assert.ok(declared.includes(key), `handler "${key}" is not declared in scene_actions`);
+  }
+});
+
+test('every widgets key has a handler, and vice versa (5 widgets at most)', () => {
+  const declared = keysOf(manifest.widgets);
+  assert.ok(declared.length <= 5);
+  for (const key of declared) {
+    assert.equal(typeof WIDGETS[key]?.get, 'function', `widget "${key}" has no content handler`);
+  }
+  for (const key of Object.keys(WIDGETS)) {
+    assert.ok(declared.includes(key), `widget "${key}" is not declared in widgets`);
   }
 });
 
@@ -119,6 +132,7 @@ test('every text is multi-language, with English and French', () => {
     ...(manifest.actions ?? []),
     ...(manifest.scene_triggers ?? []),
     ...(manifest.scene_actions ?? []),
+    ...(manifest.widgets ?? []),
     ...(manifest.scene_triggers ?? []).flatMap((t) => t.variables ?? []),
   ]) {
     texts.push(item.label);

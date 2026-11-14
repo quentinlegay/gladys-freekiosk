@@ -7,6 +7,7 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 import { createFreeKioskClient } from './freekioskClient.js';
 import { MANIFEST_ACTIONS, SCENE_ACTIONS } from './scenes.js';
 import { TabletService } from './tabletService.js';
+import { refreshWidgets, WIDGETS } from './widgets.js';
 
 const logger = createLogger({ name: 'freekiosk' });
 
@@ -20,6 +21,8 @@ export function registerHandlers(
   { client = createFreeKioskClient(), refreshDelayMs } = {},
 ) {
   const service = new TabletService(gladys, client, { refreshDelayMs });
+  // A tablet changed (list, reachability, screen): re-pull the widgets.
+  service.onChange = () => refreshWidgets(gladys);
 
   // Discovery tab: refresh the known tablets and scan the configured range.
   gladys.onScanRequest(async () => {
@@ -62,11 +65,20 @@ export function registerHandlers(
     });
   }
 
+  // Dashboard widgets: content pulled by the core, button taps relayed.
+  for (const [key, widget] of Object.entries(WIDGETS)) {
+    gladys.onWidgetGet(key, (request) => widget.get(service, request));
+    gladys.onWidgetAction(key, (actionKey, params, { settings, values } = {}) =>
+      widget.action(service, { actionKey, params: params ?? {}, settings, values }),
+    );
+  }
+
   gladys.onConfigUpdated(async (config) => {
     logger.info('onConfigUpdated -> configuration reloaded');
     service.load(config);
     await reportConfigStatus(gladys, service);
     await service.publishDiscoveredDevices();
+    refreshWidgets(gladys);
   });
 
   gladys.on('connected', async () => {
@@ -78,6 +90,8 @@ export function registerHandlers(
       );
       await service.publishDiscoveredDevices();
       await reportConfigStatus(gladys, service);
+      // The nudges sent while the socket was down were dropped.
+      refreshWidgets(gladys);
     } catch (err) {
       logger.error('Post-connection initialization failed', err);
       await gladys

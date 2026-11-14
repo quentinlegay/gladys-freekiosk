@@ -23,6 +23,7 @@ its only runtime dependency (HTTP calls use Node's global `fetch`). Inspired by
 | Battery, charging, battery temperature, ambient light, current page | Read from `/api/status`, polled                                                                                         |
 | Camera (opt-in)                                                     | `onGetImage` → `/api/camera/photo`, quality lowered until under 150 KB                                                  |
 | Availability                                                        | Transport badge (local / unreachable, degraded when the key is refused) + `tablet_availability_changed` scene trigger   |
+| Dashboard widgets (Gladys 5.1+)                                     | `tablet` (live tiles, status, screen / reload / URL / speak buttons) and `tablets_overview` (fleet status, scan button) |
 | Scene actions (Gladys 5.1+)                                         | `load_url`, `speak` (with language), `show_message`, `play_audio`, `stop_audio`                                         |
 
 ## Architecture
@@ -36,6 +37,7 @@ src/network.js           scan range parsing (CIDR / ranges) + concurrent probing
 src/registry.js          known tablets, stable generated ids, persisted in the config
 src/devices.js           Gladys device / features / states, command mapping
 src/scenes.js            manifest actions + scene actions registry
+src/widgets.js           dashboard widgets (content + button actions)
 src/config.js            defaults (mirror the manifest) + normalization
 src/constants.js         endpoints, feature keys, timeouts
 ```

@@ -14,6 +14,7 @@ import {
   AVAILABILITY,
   CAMERA_MODE,
   CAMERA_QUALITIES,
+  FEATURE,
   MAX_CAMERA_IMAGE_LENGTH,
   SCENE_TRIGGER_AVAILABILITY,
 } from './constants.js';
@@ -55,6 +56,17 @@ export class TabletService {
     this.statuses = new Map(); // tablet id -> normalized status
     this.availability = new Map(); // tablet id -> { online, authFailed, error }
     this.lastPolls = new Map(); // tablet id -> epoch ms
+    // Called when what the dashboard widgets compute changed (tablet list,
+    // availability, screen): app.js nudges the widgets from it.
+    this.onChange = () => {};
+  }
+
+  notifyChange() {
+    try {
+      this.onChange();
+    } catch (err) {
+      logger.warn(`Change listener failed: ${err.message}`);
+    }
   }
 
   // --- Configuration ---------------------------------------------------------
@@ -75,6 +87,7 @@ export class TabletService {
 
   async save() {
     await this.gladys.setConfig(this.registry.toConfig());
+    this.notifyChange();
   }
 
   /** Error message when the config is unusable, or null. */
@@ -148,6 +161,7 @@ export class TabletService {
       await this.save();
     }
     await this.publishDiscoveredDevices();
+    this.notifyChange();
     const known = this.registry.list().length;
     const online = this.registry.list().filter((t) => this.availability.get(t.id)?.online).length;
     return { known, online, added, moved };
@@ -245,6 +259,7 @@ export class TabletService {
     if (previous && previous.online === next.online && previous.authFailed === next.authFailed) {
       return;
     }
+    this.notifyChange();
     if (!this.isCreated(tablet)) {
       return;
     }
@@ -322,7 +337,24 @@ export class TabletService {
     if (command.confirmed !== undefined) {
       await this.gladys.publishState(feature.external_id, command.confirmed);
     }
+    // Keep the cached status in step, so a widget refreshed now shows the
+    // new screen state without waiting for the next read.
+    const status = this.statuses.get(tablet.id);
+    const key = featureKeyFromExternalId(feature.external_id);
+    if (status && (key === FEATURE.SCREEN || key === FEATURE.SCREENSAVER)) {
+      status[key === FEATURE.SCREEN ? 'screenOn' : 'screensaverActive'] = command.confirmed === 1;
+      this.notifyChange();
+    }
     this.scheduleRefresh(tablet);
+  }
+
+  /** Reachability of a tablet: { online, authFailed, error } or undefined. */
+  availabilityOf(tablet) {
+    return this.availability.get(tablet.id);
+  }
+
+  statusOf(tablet) {
+    return this.statuses.get(tablet.id);
   }
 
   /** Read the status again shortly after a command, once the tablet applied it. */

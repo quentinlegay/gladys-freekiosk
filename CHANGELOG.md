@@ -24,6 +24,9 @@ the notes of the version's GitHub Release.
   trigger.
 - Scene actions: open a URL, speak (with a language), show a message, play and
   stop a sound.
+- Dashboard widgets: "FreeKiosk tablet" (live battery, brightness and volume,
+  status, screen / reload / open a URL / speak buttons) and "FreeKiosk
+  tablets" (every tablet with its connection and battery, scan button).
 - Actions to set a tablet's own API key, change its address and identify it.
 - A tablet found by the scan at a new address keeps its device.
 - User documentation in French and English.

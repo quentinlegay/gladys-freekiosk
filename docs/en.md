@@ -89,6 +89,17 @@ key, an orange dot.
 - The device features (screen, brightness...) can also be driven with the
   standard "Control a device" action.
 
+### Dashboard widgets
+
+- **FreeKiosk tablet**: pick a tablet in the widget settings. It shows its
+  battery, brightness and volume live, its status (connection, screen,
+  current page, power) and four buttons: screen on / off, reload the page,
+  open a URL and make the tablet speak (a small form opens). The buttons are
+  hidden while the tablet is unreachable.
+- **FreeKiosk tablets**: all your tablets (10 at most) with their connection
+  and battery, the number of tablets online, and a **Scan the network**
+  button.
+
 ## 5. Actions of the Configuration page
 
 | Action                    | Use                                                                                  |
