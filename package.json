@@ -1,6 +1,6 @@
 {
   "name": "gladys-freekiosk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Gladys Assistant external integration to discover FreeKiosk Android tablets on the local network and control them through their REST API.",
   "type": "module",

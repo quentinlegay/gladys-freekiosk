@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-14
+
 ### Added
 
 - Discovery of FreeKiosk tablets by scanning the configured addresses (CIDR
@@ -28,4 +30,5 @@ the notes of the version's GitHub Release.
 - A tablet found by the scan at a new address keeps its device.
 - User documentation in French and English.
 
-[Unreleased]: https://github.com/quentinlegay/gladys-freekiosk/commits/main
+[Unreleased]: https://github.com/quentinlegay/gladys-freekiosk/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/quentinlegay/gladys-freekiosk/releases/tag/v1.0.1

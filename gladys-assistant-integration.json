@@ -6,8 +6,8 @@
     "en": "Discover your FreeKiosk tablets on the network and control them through their REST API.",
     "fr": "Découvrez vos tablettes FreeKiosk sur le réseau et pilotez-les via leur API REST."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/quentinlegay/gladys-freekiosk:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/quentinlegay/gladys-freekiosk:1.0.1",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/quentinlegay/gladys-freekiosk/main/cover.png",
   "categories": ["multimedia"],
