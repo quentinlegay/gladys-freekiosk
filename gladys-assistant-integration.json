@@ -87,8 +87,8 @@
       "type": "select",
       "label": { "en": "Tablet camera", "fr": "Caméra de la tablette" },
       "description": {
-        "en": "Adds a camera to the tablets created afterwards, showing a photo taken on demand. Disabled by default for privacy.",
-        "fr": "Ajoute une caméra aux tablettes créées ensuite, affichant une photo prise à la demande. Désactivée par défaut, par respect de la vie privée."
+        "en": "Adds a camera to the tablets created afterwards. A photo is taken only on request (never a continuous stream), to spare the battery. Disabled by default for privacy.",
+        "fr": "Ajoute une caméra aux tablettes créées ensuite. Une photo n'est prise qu'à la demande (jamais de flux continu), pour ménager la batterie. Désactivée par défaut, par respect de la vie privée."
       },
       "required": false,
       "default": "disabled",
@@ -97,6 +97,19 @@
         { "value": "front", "label": { "en": "Front camera", "fr": "Caméra frontale" } },
         { "value": "back", "label": { "en": "Back camera", "fr": "Caméra arrière" } }
       ]
+    },
+    {
+      "key": "camera_cache_seconds",
+      "type": "number",
+      "label": { "en": "Photo reuse delay (s)", "fr": "Durée de réutilisation d'une photo (s)" },
+      "description": {
+        "en": "A photo younger than this is shown again instead of waking the camera: fewer captures, less battery. 0 = a new photo on every request.",
+        "fr": "Une photo plus récente que cette durée est réaffichée au lieu de réveiller la caméra : moins de prises, moins de batterie. 0 = une nouvelle photo à chaque demande."
+      },
+      "required": false,
+      "default": 60,
+      "min": 0,
+      "max": 3600
     }
   ],
   "actions": [
@@ -369,6 +382,24 @@
       "key": "stop_audio",
       "label": { "en": "Stop the sound of a tablet", "fr": "Arrêter le son d'une tablette" },
       "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Tablet", "fr": "Tablette" },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "take_photo",
+      "label": { "en": "Take a photo with a tablet", "fr": "Prendre une photo avec une tablette" },
+      "description": {
+        "en": "Takes a new photo with the tablet camera (enable it in the configuration). Follow with \"Send a camera image\" to send it.",
+        "fr": "Prend une nouvelle photo avec la caméra de la tablette (à activer dans la configuration). Ajoutez ensuite « Envoyer une image de caméra » pour l'envoyer."
+      },
+      "timeout_seconds": 45,
       "fields": [
         {
           "key": "device",

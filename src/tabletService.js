@@ -56,6 +56,10 @@ export class TabletService {
     this.statuses = new Map(); // tablet id -> normalized status
     this.availability = new Map(); // tablet id -> { online, authFailed, error }
     this.lastPolls = new Map(); // tablet id -> epoch ms
+    this.photos = new Map(); // tablet id -> { image, camera, takenAt }
+    this.photoCaptures = new Map(); // tablet id -> capture in progress
+    this.photoQualityIndex = new Map(); // tablet id -> index in CAMERA_QUALITIES
+    this.now = () => Date.now();
     // Called when what the dashboard widgets compute changed (tablet list,
     // availability, screen): app.js nudges the widgets from it.
     this.onChange = () => {};
@@ -76,7 +80,7 @@ export class TabletService {
     this.config = normalizeConfig(rawConfig);
     this.registry = TabletRegistry.fromConfig(rawConfig);
     // Forget what belongs to tablets removed meanwhile.
-    for (const map of [this.statuses, this.availability, this.lastPolls]) {
+    for (const map of [this.statuses, this.availability, this.lastPolls, this.photos]) {
       for (const id of map.keys()) {
         if (!this.registry.get(id)) {
           map.delete(id);
@@ -367,22 +371,75 @@ export class TabletService {
     }, this.refreshDelayMs).unref?.();
   }
 
-  /** onGetImage: a fresh photo of the configured camera, under 150 KB. */
+  /**
+   * onGetImage: a photo of the configured camera, under 150 KB. Photos are
+   * only ever taken on request (never on a timer), and a recent one is served
+   * again instead of waking the camera: a dashboard live view asks often, and
+   * every capture powers the camera sensor up, which drains the battery.
+   */
   async getImage(device) {
-    const tablet = this.requireTablet(device.external_id);
+    return this.capturePhoto(this.requireTablet(device.external_id));
+  }
+
+  /**
+   * Take (or reuse) a photo of a tablet.
+   * @param {object} tablet registry entry
+   * @param {{ force?: boolean }} [options] force = ignore the cache (an
+   *   explicit "take a photo" request)
+   * @returns {Promise<string>} `image/jpg;base64,...`
+   */
+  async capturePhoto(tablet, { force = false } = {}) {
     const camera = this.config.camera;
     if (camera !== CAMERA_MODE.FRONT && camera !== CAMERA_MODE.BACK) {
       throw new Error('The tablet camera is disabled in the integration configuration');
     }
-    for (const quality of CAMERA_QUALITIES) {
+    const cached = this.photos.get(tablet.id);
+    const maxAge = this.config.camera_cache_seconds * 1000;
+    if (!force && cached && cached.camera === camera && this.now() - cached.takenAt < maxAge) {
+      logger.debug(`Photo of ${tabletName(tablet)} served from the cache`);
+      return cached.image;
+    }
+    // Several viewers asking at once share ONE capture.
+    const inFlight = this.photoCaptures.get(tablet.id);
+    if (inFlight) {
+      return inFlight;
+    }
+    const capture = this.takePhoto(tablet, camera).finally(() => {
+      this.photoCaptures.delete(tablet.id);
+    });
+    this.photoCaptures.set(tablet.id, capture);
+    return capture;
+  }
+
+  async takePhoto(tablet, camera) {
+    // Start from the quality that fitted last time: each retry is another
+    // camera power-up.
+    const start = this.photoQualityIndex.get(tablet.id) ?? 0;
+    for (let index = start; index < CAMERA_QUALITIES.length; index += 1) {
+      const quality = CAMERA_QUALITIES[index];
       const jpeg = await this.client.getPhoto(this.target(tablet), { camera, quality });
       const image = `image/jpg;base64,${jpeg.toString('base64')}`;
       if (image.length <= MAX_CAMERA_IMAGE_LENGTH) {
+        this.photoQualityIndex.set(tablet.id, index);
+        this.photos.set(tablet.id, { image, camera, takenAt: this.now() });
+        logger.info(`Photo taken on ${tabletName(tablet)} (quality ${quality})`);
         return image;
       }
       logger.debug(`Photo at quality ${quality} too large (${image.length} chars), retrying`);
     }
     throw new Error('The photo is larger than 150 KB even at the lowest quality');
+  }
+
+  /**
+   * Scene action "take_photo": a NEW photo, published on the tablet's camera
+   * so the following "send a camera image" action of the scene sends it.
+   */
+  async sceneTakePhoto(fields) {
+    const tablet = this.requireTablet(fields.device);
+    const image = await this.capturePhoto(tablet, { force: true });
+    if (this.isCreated(tablet)) {
+      await this.gladys.publishCameraImage(tabletIds(this.gladys, tablet).device, image);
+    }
   }
 
   /** onDeviceDeleted: forget the tablet (a later scan finds it again). */
@@ -392,6 +449,8 @@ export class TabletService {
       this.statuses.delete(tablet.id);
       this.availability.delete(tablet.id);
       this.lastPolls.delete(tablet.id);
+      this.photos.delete(tablet.id);
+      this.photoQualityIndex.delete(tablet.id);
       await this.save();
     }
   }
