@@ -40,6 +40,7 @@ src/network.js                    scan range parsing (CIDR / ranges) + concurren
 src/registry.js                   known tablets with stable generated ids, stored in the config
 src/devices.js                    Gladys device / features / states, command -> endpoint mapping
 src/scenes.js                     manifest actions + scene actions (manifest keys -> handlers)
+src/widgets.js                    dashboard widgets: content (validateWidgetContent-clean) + button actions
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
 src/constants.js                  endpoints, feature keys (forever), timeouts
 gladys-assistant-integration.json manifest: name, config_schema, actions, scenes, image...

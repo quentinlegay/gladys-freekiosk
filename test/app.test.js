@@ -289,6 +289,77 @@ test('the camera feature serves a photo under 150 KB, lowering the quality if ne
   );
 });
 
+async function cameraSetup(config = {}) {
+  const photo = (quality) => Buffer.alloc(quality >= 30 ? 200 * 1024 : 50 * 1024, quality);
+  const ctx = await setup({
+    config: { scan_range: '192.168.1.50', camera: 'back', ...config },
+    tablets: { '192.168.1.50:8080': { status: sampleStatus(), photo } },
+  });
+  await ctx.gladys.fake.scanRequest();
+  await createAll(ctx.gladys);
+  let clock = 1_000_000;
+  ctx.service.now = () => clock;
+  ctx.advance = (ms) => {
+    clock += ms;
+  };
+  ctx.photos = () => ctx.client.calls.filter((c) => c.type === 'photo').map((c) => c.quality);
+  return ctx;
+}
+
+test('a recent photo is reused instead of waking the camera again', async () => {
+  const { gladys, advance, photos } = await cameraSetup();
+  const [device] = gladys.fake.discoveredDevices;
+
+  const first = await gladys.fake.getImage(device);
+  assert.deepEqual(photos(), [50, 30, 15]);
+
+  // Within the 60 s default: same image, no capture at all.
+  advance(59_000);
+  const again = await gladys.fake.getImage(device);
+  assert.deepEqual(again, first);
+  assert.deepEqual(photos(), [50, 30, 15]);
+
+  // Expired: one new capture, straight at the quality that fitted last time.
+  advance(2_000);
+  await gladys.fake.getImage(device);
+  assert.deepEqual(photos(), [50, 30, 15, 15]);
+});
+
+test('simultaneous requests share one capture, and 0 disables the reuse', async () => {
+  const { gladys, service, photos } = await cameraSetup({ camera_cache_seconds: 0 });
+  const [device] = gladys.fake.discoveredDevices;
+  const tablet = service.registry.list()[0];
+
+  const [a, b] = await Promise.all([service.capturePhoto(tablet), service.capturePhoto(tablet)]);
+  assert.equal(a, b);
+  assert.deepEqual(photos(), [50, 30, 15]);
+
+  await gladys.fake.getImage(device);
+  assert.deepEqual(photos(), [50, 30, 15, 15]);
+});
+
+test('the take_photo scene action takes a new photo and publishes it on the camera', async () => {
+  const { gladys, photos } = await cameraSetup();
+  const [device] = gladys.fake.discoveredDevices;
+  await gladys.fake.getImage(device); // cached...
+
+  const ack = await gladys.fake.sceneAction('take_photo', { device: device.external_id });
+  assert.equal(ack.success, true, JSON.stringify(ack));
+  assert.deepEqual(photos(), [50, 30, 15, 15], '...but an explicit request ignores the cache');
+  assert.equal(gladys.fake.cameraImages.length, 1);
+  assert.match(JSON.stringify(gladys.fake.cameraImages[0]), /image\/jpg;base64,/);
+  assert.ok(JSON.stringify(gladys.fake.cameraImages[0]).includes(device.external_id));
+});
+
+test('the camera disabled refuses to take a photo', async () => {
+  const { gladys } = await setup({ config: { scan_range: '192.168.1.50' }, tablets: ONE_TABLET });
+  await gladys.fake.scanRequest();
+  const [device] = gladys.fake.discoveredDevices;
+  const ack = await gladys.fake.sceneAction('take_photo', { device: device.external_id });
+  assert.equal(ack.success, false);
+  assert.match(ack.error, /camera is disabled/);
+});
+
 test('deleting a device forgets the tablet', async () => {
   const { gladys } = await setup({ config: { scan_range: '192.168.1.50' }, tablets: ONE_TABLET });
   await gladys.fake.scanRequest();

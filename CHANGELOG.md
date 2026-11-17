@@ -21,11 +21,19 @@ the notes of the version's GitHub Release.
   reload, wake, clear cache, restart FreeKiosk, lock, reboot and beep.
 - Battery, charging, battery temperature, ambient light and current page,
   refreshed at the configured interval and right after each command.
-- Optional camera (front or back) serving a photo taken on demand.
+- Optional camera (front or back) serving a photo taken on demand only, never
+  on a timer: a recent photo is reused (configurable delay, 60 s by default),
+  simultaneous requests share one capture and the JPEG quality that fits is
+  remembered, to spare the tablet battery.
+- "Take a photo with a tablet" scene action, to follow with "Send a camera
+  image".
 - Reachability badge per tablet, and the "Tablet online / offline" scene
   trigger.
 - Scene actions: open a URL, speak (with a language), show a message, play and
   stop a sound.
+- Dashboard widgets: "FreeKiosk tablet" (live battery, brightness and volume,
+  status, screen / reload / open a URL / speak buttons) and "FreeKiosk
+  tablets" (every tablet with its connection and battery, scan button).
 - Actions to set a tablet's own API key, change its address and identify it.
 - A tablet found by the scan at a new address keeps its device.
 - User documentation in French and English.

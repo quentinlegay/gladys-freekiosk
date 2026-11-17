@@ -15,6 +15,7 @@ export const SCENE_ACTIONS = {
   show_message: (service, fields) => service.sceneShowMessage(fields),
   play_audio: (service, fields) => service.scenePlayAudio(fields),
   stop_audio: (service, fields) => service.sceneStopAudio(fields),
+  take_photo: (service, fields) => service.sceneTakePhoto(fields),
 };
 
 // Manifest `actions` (buttons of the Configuration screen).

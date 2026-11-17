@@ -38,6 +38,7 @@ In Gladys, **Integrations** > **FreeKiosk** > **Configuration**:
 | REST API port     | Port scanned, and default port of the tablets added by IP (8080).                                                                     |
 | Refresh interval  | How often the tablets' status is read, in seconds (15 minimum, 30 by default).                                                        |
 | Tablet camera     | Adds a camera (front or back) to the tablets created afterwards. Disabled by default.                                                 |
+| Photo reuse delay | A photo younger than this (60 s by default) is shown again instead of waking the camera. 0 = a new photo on every request.            |
 
 ## 3. Discover the tablets
 
@@ -85,9 +86,21 @@ key, an orange dot.
   answering (filter by tablet and by status; `status` variable).
 - **Actions**: _Open a URL on a tablet_, _Speak on a tablet_ (with the
   language, e.g. `en-US`), _Show a message_, _Play a sound_ (audio file URL,
-  volume, loop) and _Stop the sound_.
+  volume, loop), _Stop the sound_ and _Take a photo with a tablet_ (a new
+  photo, to send with the "Send a camera image" action that follows).
 - The device features (screen, brightness...) can also be driven with the
   standard "Control a device" action.
+
+### Dashboard widgets
+
+- **FreeKiosk tablet**: pick a tablet in the widget settings. It shows its
+  battery, brightness and volume live, its status (connection, screen,
+  current page, power) and four buttons: screen on / off, reload the page,
+  open a URL and make the tablet speak (a small form opens). The buttons are
+  hidden while the tablet is unreachable.
+- **FreeKiosk tablets**: all your tablets (10 at most) with their connection
+  and battery, the number of tablets online, and a **Scan the network**
+  button.
 
 ## 5. Actions of the Configuration page
 
@@ -110,6 +123,14 @@ key, an orange dot.
   enabled (a device's features are set when it is created: delete and create
   the tablet again to add it). The photo is compressed to fit Gladys' 150 KB
   limit. It fails while FreeKiosk's motion detection uses the camera.
+- **Camera and battery.** The integration never films and never takes photos
+  on a timer: a photo is taken only when Gladys asks for one (dashboard camera
+  widget, chat, the "Take a photo" scene action). A photo younger than the
+  _Photo reuse delay_ is shown again without waking the camera, simultaneous
+  requests share one capture, and the integration remembers the JPEG quality
+  that fits the 150 KB limit so it takes one shot, not several. On the tablet
+  side, FreeKiosk 2.1+ keeps a silent "Remote camera available" service while
+  the REST API is on; the camera itself only powers up for a photo.
 - **Deleting a tablet** in Gladys forgets it: a later scan finds it again as a
   new tablet.
 - **Security.** FreeKiosk's REST API is plain HTTP: keep the tablets on a

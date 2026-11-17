@@ -32,13 +32,14 @@ aux tablettes.
 
 Dans Gladys, **Intégrations** > **FreeKiosk** > **Configuration** :
 
-| Champ                          | Rôle                                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Clé d'API                      | La clé définie dans FreeKiosk, commune à vos tablettes. Vide si elles n'en ont pas.                                                        |
-| Adresses à scanner             | Où chercher les tablettes : `192.168.1.0/24`, `192.168.1.20-192.168.1.60`, `192.168.1.50`... séparés par des virgules (1024 adresses max). |
-| Port de l'API REST             | Port scanné, et port par défaut des tablettes ajoutées par IP (8080).                                                                      |
-| Intervalle de rafraîchissement | Fréquence de lecture de l'état des tablettes, en secondes (15 minimum, 30 par défaut).                                                     |
-| Caméra de la tablette          | Ajoute une caméra (frontale ou arrière) aux tablettes créées ensuite. Désactivée par défaut.                                               |
+| Champ                              | Rôle                                                                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Clé d'API                          | La clé définie dans FreeKiosk, commune à vos tablettes. Vide si elles n'en ont pas.                                                        |
+| Adresses à scanner                 | Où chercher les tablettes : `192.168.1.0/24`, `192.168.1.20-192.168.1.60`, `192.168.1.50`... séparés par des virgules (1024 adresses max). |
+| Port de l'API REST                 | Port scanné, et port par défaut des tablettes ajoutées par IP (8080).                                                                      |
+| Intervalle de rafraîchissement     | Fréquence de lecture de l'état des tablettes, en secondes (15 minimum, 30 par défaut).                                                     |
+| Caméra de la tablette              | Ajoute une caméra (frontale ou arrière) aux tablettes créées ensuite. Désactivée par défaut.                                               |
+| Durée de réutilisation d'une photo | Une photo plus récente (60 s par défaut) est réaffichée au lieu de réveiller la caméra. 0 = une nouvelle photo à chaque demande.           |
 
 ## 3. Découvrir les tablettes
 
@@ -87,9 +88,23 @@ qui refuse la clé d'API par un point orange.
   `status`).
 - **Actions** : _Ouvrir une URL sur une tablette_, _Faire parler une tablette_
   (avec la langue, ex. `fr-FR`), _Afficher un message_, _Jouer un son_ (URL
-  d'un fichier audio, volume, en boucle) et _Arrêter le son_.
+  d'un fichier audio, volume, en boucle), _Arrêter le son_ et _Prendre une
+  photo avec une tablette_ (une nouvelle photo, à envoyer avec l'action
+  « Envoyer une image de caméra » qui suit).
 - Les fonctionnalités de l'appareil (écran, luminosité...) se pilotent aussi
   avec l'action standard « Contrôler un appareil ».
+
+### Widgets du tableau de bord
+
+- **Tablette FreeKiosk** : choisissez une tablette dans les réglages du widget.
+  Il affiche en direct sa batterie, sa luminosité et son volume, son état
+  (connexion, écran, page affichée, alimentation) et quatre boutons : allumer /
+  éteindre l'écran, recharger la page, ouvrir une URL et faire parler la
+  tablette (un petit formulaire s'ouvre). Les boutons sont masqués quand la
+  tablette est injoignable.
+- **Tablettes FreeKiosk** : toutes vos tablettes (10 au plus) avec leur
+  connexion et leur batterie, le nombre de tablettes en ligne, et un bouton
+  **Scanner le réseau**.
 
 ## 5. Actions de la page Configuration
 
@@ -114,6 +129,16 @@ qui refuse la clé d'API par un point orange.
   supprimez puis recréez la tablette pour l'ajouter). La photo est compressée
   pour tenir dans la limite de 150 Ko de Gladys. Elle échoue si la détection
   de mouvement de FreeKiosk utilise déjà la caméra.
+- **Caméra et batterie.** L'intégration ne filme jamais et ne prend jamais de
+  photo à intervalle régulier : une photo n'est prise que quand Gladys en
+  demande une (widget caméra du tableau de bord, chat, action de scène
+  « Prendre une photo »). Une photo plus récente que la _Durée de
+  réutilisation_ est réaffichée sans réveiller la caméra, les demandes
+  simultanées partagent une seule prise, et l'intégration retient la qualité
+  JPEG qui tient dans la limite de 150 Ko pour ne prendre qu'une photo, pas
+  plusieurs. Côté tablette, FreeKiosk 2.1+ garde un service silencieux
+  « Remote camera available » tant que l'API REST est active ; la caméra
+  elle-même ne s'allume que le temps d'une photo.
 - **Supprimer une tablette** dans Gladys l'oublie : un scan ultérieur la
   retrouvera comme nouvelle tablette.
 - **Sécurité.** L'API REST de FreeKiosk est en HTTP simple : gardez les

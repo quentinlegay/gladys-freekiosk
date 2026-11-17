@@ -20,6 +20,9 @@ export const DEFAULT_CONFIG = {
   poll_frequency: 30,
   // Camera exposed as a Gladys camera device feature: disabled, front or back.
   camera: CAMERA_MODE.DISABLED,
+  // Seconds during which a photo is served again instead of taking a new one
+  // (battery). 0 = a new photo on every request.
+  camera_cache_seconds: 60,
 };
 
 const CAMERA_MODES = new Set(Object.values(CAMERA_MODE));
@@ -52,5 +55,13 @@ export function normalizeConfig(raw = {}) {
       max: 3600,
     }),
     camera: CAMERA_MODES.has(config.camera) ? config.camera : DEFAULT_CONFIG.camera,
+    camera_cache_seconds: toNumber(
+      config.camera_cache_seconds,
+      DEFAULT_CONFIG.camera_cache_seconds,
+      {
+        min: 0,
+        max: 3600,
+      },
+    ),
   };
 }

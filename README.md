@@ -12,18 +12,19 @@ its only runtime dependency (HTTP calls use Node's global `fetch`). Inspired by
 
 ## What it does
 
-| Feature                                                             | Notes                                                                                                                   |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Discovery: network scan                                             | Probes the configured CIDR / ranges on the REST port; recognizes FreeKiosk even behind an API key (`realm="FreeKiosk"`) |
-| Discovery: add by IP                                                | Manifest action, checks the tablet answers first                                                                        |
-| Screen, screensaver, auto brightness                                | Switches with feedback (`/api/screen/*`, `/api/screensaver/*`, `/api/autoBrightness/*`)                                 |
-| Brightness, volume                                                  | 0-100 % (`/api/brightness`, `/api/volume`)                                                                              |
-| Open a URL, speak, show a message                                   | Writable text features (`/api/url`, `/api/tts`, `/api/toast`)                                                           |
-| Reload, wake, clear cache, restart app, lock, reboot, beep          | Push buttons                                                                                                            |
-| Battery, charging, battery temperature, ambient light, current page | Read from `/api/status`, polled                                                                                         |
-| Camera (opt-in)                                                     | `onGetImage` → `/api/camera/photo`, quality lowered until under 150 KB                                                  |
-| Availability                                                        | Transport badge (local / unreachable, degraded when the key is refused) + `tablet_availability_changed` scene trigger   |
-| Scene actions (Gladys 5.1+)                                         | `load_url`, `speak` (with language), `show_message`, `play_audio`, `stop_audio`                                         |
+| Feature                                                             | Notes                                                                                                                                                              |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Discovery: network scan                                             | Probes the configured CIDR / ranges on the REST port; recognizes FreeKiosk even behind an API key (`realm="FreeKiosk"`)                                            |
+| Discovery: add by IP                                                | Manifest action, checks the tablet answers first                                                                                                                   |
+| Screen, screensaver, auto brightness                                | Switches with feedback (`/api/screen/*`, `/api/screensaver/*`, `/api/autoBrightness/*`)                                                                            |
+| Brightness, volume                                                  | 0-100 % (`/api/brightness`, `/api/volume`)                                                                                                                         |
+| Open a URL, speak, show a message                                   | Writable text features (`/api/url`, `/api/tts`, `/api/toast`)                                                                                                      |
+| Reload, wake, clear cache, restart app, lock, reboot, beep          | Push buttons                                                                                                                                                       |
+| Battery, charging, battery temperature, ambient light, current page | Read from `/api/status`, polled                                                                                                                                    |
+| Camera (opt-in)                                                     | On demand only (`onGetImage` → `/api/camera/photo`): recent photo reused (battery), one shared capture, remembered quality under 150 KB; `take_photo` scene action |
+| Availability                                                        | Transport badge (local / unreachable, degraded when the key is refused) + `tablet_availability_changed` scene trigger                                              |
+| Dashboard widgets (Gladys 5.1+)                                     | `tablet` (live tiles, status, screen / reload / URL / speak buttons) and `tablets_overview` (fleet status, scan button)                                            |
+| Scene actions (Gladys 5.1+)                                         | `load_url`, `speak` (with language), `show_message`, `play_audio`, `stop_audio`, `take_photo`                                                                      |
 
 ## Architecture
 
@@ -36,6 +37,7 @@ src/network.js           scan range parsing (CIDR / ranges) + concurrent probing
 src/registry.js          known tablets, stable generated ids, persisted in the config
 src/devices.js           Gladys device / features / states, command mapping
 src/scenes.js            manifest actions + scene actions registry
+src/widgets.js           dashboard widgets (content + button actions)
 src/config.js            defaults (mirror the manifest) + normalization
 src/constants.js         endpoints, feature keys, timeouts
 ```
